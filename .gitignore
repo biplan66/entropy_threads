@@ -1,0 +1,6 @@
+venv/*
+venv2/*
+export/*
+.idea/*
+*.pyc
+*/__pycache__
