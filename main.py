@@ -2,6 +2,9 @@ from entities.entities import *
 import numpy as np
 import matplotlib.pyplot as plt
 
+def joiner(s : str, n = 25):
+    return "\n".join([s[i:i + n] for i in range(0, len(s) - (len(s) % n), n)])
+
 if __name__ == '__main__':
 
     field = []
@@ -9,7 +12,8 @@ if __name__ == '__main__':
         field.append(SimpleEntity('J1'))
         field.append(SimpleEntity('J2'))
 
-    for iteration in range(100):
+    for iteration in range(10000):
+        print(iteration)
         firstElem = int(np.random.uniform(0, len(field)))
         secondElem = int(np.random.uniform(0, len(field)))
         while firstElem == secondElem:
@@ -20,6 +24,24 @@ if __name__ == '__main__':
         multiplyEntity = MultiplyEntity(first, second)
         resDict = {first: 0, second: 0, plusEntity: 0, multiplyEntity: 0}
         trl = [first, second, plusEntity, multiplyEntity]
+        if first.canExpand():
+            tmp1 = first._first
+            tmp2 = first._second
+            trl += [tmp1, tmp2]
+            resDict[tmp1] = 0
+            resDict[tmp2] = 0
+            del tmp1
+            del tmp2
+
+        if second.canExpand():
+            tmp1 = second._first
+            tmp2 = second._second
+            trl += [tmp1, tmp2]
+            resDict[tmp1] = 0
+            resDict[tmp2] = 0
+            del tmp1
+            del tmp2
+
         for i in range(10):
             sortedItems = sorted([[item.getValue(), item] for item in trl], key=lambda item: item[0])
             resDict[sortedItems[-1][1]]+=1
@@ -34,26 +56,39 @@ if __name__ == '__main__':
         field[secondElem] = res[-1][0]
         del res
 
-        if iteration % 10 == 0:
+        if iteration % 30 == 0:
             res = {}
             for item in field:
-                simplified = item.equation().simplify()
+                simplified = item.equation().expand()
+                item.setEquation(simplified)
                 if simplified not in res:
-                    res[item.equation().simplify()] = 0
-                res[item.equation().simplify()] += 1
+                    res[simplified] = 0
+                res[simplified] += 1
             x = []
             y = []
             for key in res:
-                x.append(str(key))
+                x.append(str(key).replace('**','^'))
                 y.append(res[key])
 
             position = np.arange(len(res))
             del res
 
-            plt.title("Iteration: " +str(iteration))
-            plt.barh(x, y)
-            plt.savefig("export/" + str(iteration)+".png")
-            plt.close()
+            fig, ax = plt.subplots(figsize=(15,15))
+
+            # ax.barh(x, y)
+            ax.hist([str(x.equation()) for x in field])
+            # ax.set_yticks(position)
+            fig.suptitle("Iteration: " +str(iteration))
+            for tick in ax.get_xticklabels():
+                tick.set_rotation(45)
+            #  Устанавливаем подписи тиков
+            # labels = ax.set_yticklabels(x,
+            #                             fontsize=8,  # Размер шрифта
+            #                             color='b',  # Цвет текста
+            #                             rotation=45,  # Поворот текста
+            #                             verticalalignment='center')  # Вертикальное выравнивание
+            fig.savefig("export/" + str(iteration)+".png")
+            # fig.show()
             del x
             del y
 

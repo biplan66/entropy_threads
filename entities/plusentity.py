@@ -3,8 +3,8 @@ import copy
 
 class PlusEntity(IThreadEntity):
     def __init__(self, first: IThreadEntity, second: IThreadEntity):
-        self._first = copy.copy(first)
-        self._second = copy.copy(second)
+        self._first = first #copy.copy(first)
+        self._second = second #copy.copy(second)
         if first.canExpand() or second.canExpand():
             name = '(' + first.name() + ')+(' + second.name() + ')'
         else:

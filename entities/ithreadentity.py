@@ -1,5 +1,5 @@
 from sympy import *
-
+import numpy as np
 
 class IThreadEntity:
     def __init__(self, formula: str, equation: Symbol, canExpand: bool = False):
@@ -15,6 +15,9 @@ class IThreadEntity:
     def equation(self):
         return self._equation
 
+    def setEquation(self, equation:Symbol):
+        self._equation = equation
+
     def canExpand(self):
         return self._canExpand
 
@@ -22,6 +25,10 @@ class IThreadEntity:
         raise NotImplemented
 
     def getValue(self):
+        if not self._lockedValue:
+            self._value = self.equation().subs({"J1":np.random.normal(0, 1), "J2":np.random.normal(0, 1)})
+        return self._value
+        # old stuff
         if not self._lockedValue:
             self._value = self.calcValue()
             self._lockedValue = True
