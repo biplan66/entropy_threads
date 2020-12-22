@@ -11,7 +11,9 @@ class MultiplyEntity(IThreadEntity):
             name = first.name() + '*' + second.name()
         equation = first.equation() * second.equation()
 
-        super(MultiplyEntity, self).__init__(name, equation, True)
+        super(MultiplyEntity, self).__init__(name, equation, copy.deepcopy(first.limitation), True)
+        for item in second.limitation:
+            self.modifyLimitations(item)
 
     def __str__(self):
         return self.name()

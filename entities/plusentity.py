@@ -11,7 +11,10 @@ class PlusEntity(IThreadEntity):
             name = first.name() + '+' + second.name()
         equation = first.equation() + second.equation()
 
-        super(PlusEntity, self).__init__(name, equation, True)
+        super(PlusEntity, self).__init__(name, equation, copy.deepcopy(first.limitation), True)
+        for item in second.limitation:
+            self.modifyLimitations(item)
+
 
     def __str__(self):
         return self.name()

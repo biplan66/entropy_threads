@@ -1,6 +1,7 @@
 from entities.entities import *
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
 def joiner(s : str, n = 25):
     return "\n".join([s[i:i + n] for i in range(0, len(s) - (len(s) % n), n)])
@@ -8,11 +9,11 @@ def joiner(s : str, n = 25):
 if __name__ == '__main__':
 
     field = []
-    for i in range(25):
-        field.append(SimpleEntity('J1'))
-        field.append(SimpleEntity('J2'))
+    for i in range(3):
+        field.append(SimpleEntity('J1', [ThreadLimitation('J1', 1, 3)]))
+        field.append(SimpleEntity('J2', [ThreadLimitation('J2', 1, 3)]))
 
-    for iteration in range(10000):
+    for iteration in range(100000):
         print(iteration)
         firstElem = int(np.random.uniform(0, len(field)))
         secondElem = int(np.random.uniform(0, len(field)))
@@ -20,43 +21,48 @@ if __name__ == '__main__':
             secondElem = int(np.random.uniform(0, len(field)))
 
         first, second = field[firstElem], field[secondElem]
+        print([len(first.name()), len(second.name())])
         plusEntity = PlusEntity(first, second)
         multiplyEntity = MultiplyEntity(first, second)
-        resDict = {first: 0, second: 0, plusEntity: 0, multiplyEntity: 0}
         trl = [first, second, plusEntity, multiplyEntity]
-        if first.canExpand():
-            tmp1 = first._first
-            tmp2 = first._second
-            trl += [tmp1, tmp2]
-            resDict[tmp1] = 0
-            resDict[tmp2] = 0
-            del tmp1
-            del tmp2
+        # if first.canExpand():
+        #     tmp1 = first._first
+        #     tmp2 = first._second
+        #     tmp1.limitation = copy.deepcopy(first.limitation)
+        #     tmp2.limitation = copy.deepcopy(second.limitation)
+        #     trl += [tmp1, tmp2]
+        #     del tmp1
+        #     del tmp2
+        #
+        # if second.canExpand():
+        #     tmp1 = second._first
+        #     tmp2 = second._second
+        #     tmp1.limitation = copy.deepcopy(first.limitation)
+        #     tmp2.limitation = copy.deepcopy(second.limitation)
+        #     trl += [tmp1, tmp2]
+        #     del tmp1
+        #     del tmp2
+        resDict = {}
+        trl = [item for item in trl if item.isNormalCount()]
+        [resDict.update({item: 0}) for item in trl]
 
-        if second.canExpand():
-            tmp1 = second._first
-            tmp2 = second._second
-            trl += [tmp1, tmp2]
-            resDict[tmp1] = 0
-            resDict[tmp2] = 0
-            del tmp1
-            del tmp2
+        if len(trl) >= 2:
+            for i in range(10):
+                sortedItems = sorted([[item.getValue(), item] for item in trl], key=lambda item: item[0])
+                resDict[sortedItems[-1][1]]+=1
+                resDict[sortedItems[-2][1]]+=1
+                [item.unlockValue() for item in trl]
+            for key in resDict:
+                if key.isNotNullable({'J1':0, 'J2':0}):
+                    del resDict[key]
+            res = sorted([[key, resDict[key]] for key in resDict], key=lambda item: item[1])
+            del resDict
+            if len(res) > 1:
+                field[firstElem] = res[-2][0]
+            field[secondElem] = res[-1][0]
+            del res
 
-        for i in range(10):
-            sortedItems = sorted([[item.getValue(), item] for item in trl], key=lambda item: item[0])
-            resDict[sortedItems[-1][1]]+=1
-            resDict[sortedItems[-2][1]]+=1
-            [item.unlockValue() for item in trl]
-        for key in resDict:
-            if key.isNotNullable({'J1':0, 'J2':0}):
-                del resDict[key]
-        res = sorted([[key, resDict[key]] for key in resDict], key=lambda item: item[1])
-        del resDict
-        field[firstElem] = res[-2][0]
-        field[secondElem] = res[-1][0]
-        del res
-
-        if iteration % 30 == 0:
+        if iteration % 100 == 0:
             res = {}
             for item in field:
                 simplified = item.equation().expand()
@@ -76,7 +82,7 @@ if __name__ == '__main__':
             fig, ax = plt.subplots(figsize=(15,15))
 
             # ax.barh(x, y)
-            ax.hist([str(x.equation()) for x in field])
+            ax.hist([str(x.equation()).replace('**', '^') for x in field])
             # ax.set_yticks(position)
             fig.suptitle("Iteration: " +str(iteration))
             for tick in ax.get_xticklabels():
