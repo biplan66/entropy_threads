@@ -2,16 +2,56 @@ from entities.entities import *
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import copy
 
 def joiner(s : str, n = 25):
     return "\n".join([s[i:i + n] for i in range(0, len(s) - (len(s) % n), n)])
 
+def expander(entity: IThreadEntity):
+    res = []
+    if entity.canExpand():
+        res += [copy.deepcopy(entity._first)]
+        res += [copy.deepcopy(entity._second)]
+
+    temp = factor(entity.equation())
+    if entity.equation() == simplify('J1*J1+J1*J2+J2*J2'):
+        return res
+    if str(temp) == str(entity.equation()):
+        return res
+
+    # abcd = str(temp).replace('**', '^').split('*')
+    # if len(abcd) <= 1:
+    #     return res
+    # firstTerm = sympify(abcd[0])
+    # secondTerm = temp / firstTerm
+    # if firstTerm.subs({'J1':0, 'J2': 0}) == 0 or secondTerm.subs({'J1':0, 'J2':0}) == 0:
+    #     return res
+    t = 0
+    return res
+
+def test():
+    field = []
+    sizeOfField = 3
+    for i in range(sizeOfField):
+        field.append(SimpleEntity('J1', [ThreadLimitation('J1', 1, sizeOfField)]))
+        field.append(SimpleEntity('J2', [ThreadLimitation('J2', 1, sizeOfField)]))
+    multiply1 = MultiplyEntity(field[0], field[1])
+    multiply2 = MultiplyEntity(field[2], field[4])
+    multiply3 = MultiplyEntity(field[3], field[5])
+    plus1 = PlusEntity(multiply1, multiply2)
+    plus2 = PlusEntity(plus1, multiply3)
+    return (multiply1.isNormalCount() and multiply2.isNormalCount() and multiply3.isNormalCount() and plus1.isNormalCount() and plus2.isNormalCount())
+
 if __name__ == '__main__':
+    if not test():
+        raise Exception("Test failed")
+        exit(1)
 
     field = []
-    for i in range(3):
-        field.append(SimpleEntity('J1', [ThreadLimitation('J1', 1, 3)]))
-        field.append(SimpleEntity('J2', [ThreadLimitation('J2', 1, 3)]))
+    sizeOfField = 15
+    for i in range(sizeOfField):
+        field.append(SimpleEntity('J1', [ThreadLimitation('J1', 1, sizeOfField)]))
+        field.append(SimpleEntity('J2', [ThreadLimitation('J2', 1, sizeOfField)]))
 
     for iteration in range(100000):
         print(iteration)
@@ -25,23 +65,25 @@ if __name__ == '__main__':
         plusEntity = PlusEntity(first, second)
         multiplyEntity = MultiplyEntity(first, second)
         trl = [first, second, plusEntity, multiplyEntity]
-        # if first.canExpand():
+        trl += expander(first)
+        trl += expander(second)
+        # if first.canExpand() and np.random.uniform(0, 1) > 0.5:
         #     tmp1 = first._first
         #     tmp2 = first._second
         #     tmp1.limitation = copy.deepcopy(first.limitation)
         #     tmp2.limitation = copy.deepcopy(second.limitation)
         #     trl += [tmp1, tmp2]
-        #     del tmp1
-        #     del tmp2
+        #     # del tmp1
+        #     # del tmp2
         #
-        # if second.canExpand():
+        # if second.canExpand() and np.random.uniform(0, 1) > 0.5:
         #     tmp1 = second._first
         #     tmp2 = second._second
         #     tmp1.limitation = copy.deepcopy(first.limitation)
         #     tmp2.limitation = copy.deepcopy(second.limitation)
         #     trl += [tmp1, tmp2]
-        #     del tmp1
-        #     del tmp2
+        #     # del tmp1
+        #     # del tmp2
         resDict = {}
         trl = [item for item in trl if item.isNormalCount()]
         [resDict.update({item: 0}) for item in trl]
