@@ -57,8 +57,10 @@ class IThreadEntity:
         raise NotImplemented
 
     def getValue(self):
+        from random import gauss
         if not self._lockedValue:
-            self._value = self.equation().subs({"J1":np.random.normal(0, 1), "J2":np.random.normal(0, 1)})
+            self._value = self.equation().subs({"J1": gauss(0, 1), "J2":np.random.normal(0, 1)})
+            # self._value = self.equation().subs({"J1":np.random.normal(0, 1), "J2":np.random.normal(0, 1)})
         return self._value
         # old stuff
         if not self._lockedValue:
