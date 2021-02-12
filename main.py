@@ -44,7 +44,7 @@ def test():
 
 def getMaxAfter100():
     field = []
-    sizeOfField = 3
+    sizeOfField = 10
     totalResults = {}
     for i in range(sizeOfField):
         field.append(SimpleEntity('J1', [ThreadLimitation('J1', 1, sizeOfField)]))
@@ -151,12 +151,12 @@ if __name__ == '__main__':
     lotofTimeTries()
 
     field = []
-    sizeOfField = 15
+    sizeOfField = 50
     for i in range(sizeOfField):
         field.append(SimpleEntity('J1', [ThreadLimitation('J1', 1, sizeOfField)]))
         field.append(SimpleEntity('J2', [ThreadLimitation('J2', 1, sizeOfField)]))
 
-    for iteration in range(100000):
+    for iteration in range(5000):
         print(iteration)
         firstElem = int(np.random.uniform(0, len(field)))
         secondElem = int(np.random.uniform(0, len(field)))
@@ -207,7 +207,7 @@ if __name__ == '__main__':
             field[secondElem] = res[-1][0]
             del res
 
-        if iteration % 100 == 0:
+        if iteration % 9999 == 0:
             res = {}
             for item in field:
                 simplified = item.equation().expand()
@@ -240,6 +240,12 @@ if __name__ == '__main__':
             #                             verticalalignment='center')  # Вертикальное выравнивание
             fig.savefig("export/" + str(iteration)+".png")
             # fig.show()
+            if iteration == 9999:
+                f = open("export/results.txt", "w")
+                f.write('Results:\n')
+                for key in range(len(x)):
+                    f.write(str(x[key]) + ': ' + str(y[key]) + '\n')
+                f.close()
             del x
             del y
 
