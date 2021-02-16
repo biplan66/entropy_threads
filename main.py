@@ -42,23 +42,30 @@ def test():
     plus2 = PlusEntity(plus1, multiply3)
     return (multiply1.isNormalCount() and multiply2.isNormalCount() and multiply3.isNormalCount() and plus1.isNormalCount() and plus2.isNormalCount())
 
-def getMaxAfter100():
+def getNewMaxAfter100():
     field = []
     sizeOfField = 10
     totalResults = {}
+    nameCollectionOfBaseThread = ['J1', 'J2']
+
     for i in range(sizeOfField):
-        field.append(SimpleEntity('J1', [ThreadLimitation('J1', 1, sizeOfField)]))
-        field.append(SimpleEntity('J2', [ThreadLimitation('J2', 1, sizeOfField)]))
+        for name in nameCollectionOfBaseThread:
+            field.append(SimpleEntity(name, [ThreadLimitation(name, 1, sizeOfField)]))
 
     for x in field:
         totalResults[x.equation()] = (0, x)
 
     for iteration in range(100):
+        for name in nameCollectionOfBaseThread:
+            if not any([f for f in field if isinstance(f, SimpleEntity) and f.name() == name]):
+                field.append(SimpleEntity(name, [ThreadLimitation('J1', 1, sizeOfField)]))
+
         print(iteration)
-        firstElem = int(np.random.uniform(0, len(field)))
-        secondElem = int(np.random.uniform(0, len(field)))
+        fieldLen = len(field)
+        firstElem = int(np.random.uniform(0, fieldLen))
+        secondElem = int(np.random.uniform(0, fieldLen))
         while firstElem == secondElem:
-            secondElem = int(np.random.uniform(0, len(field)))
+            secondElem = int(np.random.uniform(0, fieldLen))
 
         first, second = field[firstElem], field[secondElem]
         print([len(first.name()), len(second.name())])
@@ -73,23 +80,7 @@ def getMaxAfter100():
         trl = [first, second, plusEntity, multiplyEntity]
         trl += expander(first)
         trl += expander(second)
-        # if first.canExpand() and np.random.uniform(0, 1) > 0.5:
-        #     tmp1 = first._first
-        #     tmp2 = first._second
-        #     tmp1.limitation = copy.deepcopy(first.limitation)
-        #     tmp2.limitation = copy.deepcopy(second.limitation)
-        #     trl += [tmp1, tmp2]
-        #     # del tmp1
-        #     # del tmp2
-        #
-        # if second.canExpand() and np.random.uniform(0, 1) > 0.5:
-        #     tmp1 = second._first
-        #     tmp2 = second._second
-        #     tmp1.limitation = copy.deepcopy(first.limitation)
-        #     tmp2.limitation = copy.deepcopy(second.limitation)
-        #     trl += [tmp1, tmp2]
-        #     # del tmp1
-        #     # del tmp2
+
         resDict = {}
         trl = [item for item in trl if item.isNormalCount()]
         [resDict.update({item: 0}) for item in trl]
@@ -108,37 +99,51 @@ def getMaxAfter100():
             if len(res) > 1:
                 field[firstElem] = res[-2][0]
             field[secondElem] = res[-1][0]
-            totalResults[field[secondElem].equation()] = (totalResults[field[secondElem].equation()][0]+1, totalResults[field[secondElem].equation()][1])
+            totalResults[field[secondElem].equation()] = (
+            totalResults[field[secondElem].equation()][0] + 1, totalResults[field[secondElem].equation()][1])
             del res
 
     totalSorted = sorted([[key, totalResults[key]] for key in totalResults], key=lambda item: item[1][0])
     return totalSorted[-1][1][1]
 
 def throwAwayFunction(_):
-    return getMaxAfter100()
+    return getNewMaxAfter100()
+
+
 
 def lotofTimeTries():
     leaders = []
     leadersCnt = {}
+    maxItemsInResult = 3
     from multiprocessing import Pool
     with Pool(4) as p:
-        leaders = p.map(throwAwayFunction, range(1000))
+        leaders = p.map(throwAwayFunction, range(2))
 
     for x in leaders:
         leadersCnt[x.equation()] = 0
 
-    for iteration in range(1000):
+    for iteration in range(100):
         sortedLeaders = sorted([[x.getValue(), x] for x in leaders], key=lambda item:item[0])
         leadersCnt[sortedLeaders[-1][1].equation()] += 1
         [x.unlockValue() for x in leaders]
 
+    sortedByValue = dict(sorted(leadersCnt.items(), key=lambda item: -item[1]))
+
+
     f = open("export/results.txt", "w")
-    f.write('Init leaders:\n')
-    for leader in leaders:
-        f.write(str(leader.equation()).replace("**", "^") + '\n')
-    f.write('Results:\n')
-    for key in leadersCnt:
-        f.write(str(key) + ': ' + str(leadersCnt[key]) + '\n')
+    # f.write('Init leaders:\n')
+    # for leader in leaders:
+    #     f.write(str(leader.equation().expand()).replace("**", "^") + '\n')
+
+    f.write('Top '+ str(maxItemsInResult) +' leaders:\n')
+    iter = 0
+    for key in sortedByValue:
+        iter += 1
+        if iter > maxItemsInResult:
+            break
+        value = sortedByValue[key]
+        f.write(str(key.expand()).replace("**", "^") + ':' + str(value) + "\n")
+
     f.close()
     print("End of leaders")
     exit(0)
