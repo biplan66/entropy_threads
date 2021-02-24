@@ -117,7 +117,7 @@ def lotofTimeTries():
     maxItemsInResult = 3
     from multiprocessing import Pool
     with Pool(4) as p:
-        leaders = p.map(throwAwayFunction, range(2))
+        leaders = p.map(throwAwayFunction, range(1000))
 
     for x in leaders:
         leadersCnt[x.equation()] = 0
@@ -189,7 +189,12 @@ if __name__ == '__main__':
         #     tmp2 = second._second
         #     tmp1.limitation = copy.deepcopy(first.limitation)
         #     tmp2.limitation = copy.deepcopy(second.limitation)
-        #     trl += [tmp1, tmp2]
+        #     trl += [tmp1, tmp2] мн-в  о от 4 до 8 элементов выбирать 4х из 8
+
+        # всего 6 элементов, сравниваются 4. А если победит кто-то простой.
+        # Затем выбор по лигам. МОжет быть брать от 3 до 5 лидеров.
+
+        
         #     # del tmp1
         #     # del tmp2
         resDict = {}
