@@ -42,6 +42,64 @@ def test():
     plus2 = PlusEntity(plus1, multiply3)
     return (multiply1.isNormalCount() and multiply2.isNormalCount() and multiply3.isNormalCount() and plus1.isNormalCount() and plus2.isNormalCount())
 
+def modellingBySixItems():
+    field = []
+    sizeOfField = 3
+    totalResults = {}
+    nameCollectionOfBaseThread = ['J1', 'J2']
+
+    for i in range(sizeOfField):
+        for name in nameCollectionOfBaseThread:
+            field.append(SimpleEntity(name, [ThreadLimitation(name, 1, sizeOfField)]))
+
+    for x in field:
+        totalResults[x.equation()] = (0, x)
+
+    for iteration in range(20):
+        random.shuffle(field)
+        first, second, field = field[0], field[1], field[2:]
+        plusEntity = PlusEntity(first, second)
+        multiplyEntity = MultiplyEntity(first, second)
+
+        trl = [first, second, plusEntity, multiplyEntity]
+        trl += expander(first)
+        trl += expander(second)
+
+        resDict = {}
+        trl = [item for item in trl if item.isNormalCount()]
+        [resDict.update({item: 0}) for item in trl]
+
+        if len(trl) >= 2:
+            for i in range(10):
+                sortedItems = sorted([[item.getValue(), item] for item in trl], key=lambda item: item[0])
+                resDict[sortedItems[-1][1]] += 1
+                resDict[sortedItems[-2][1]] += 1
+                [item.unlockValue() for item in trl]
+            for key in resDict:
+                if key.isNotNullable({'J1': 0, 'J2': 0}):
+                    del resDict[key]
+            res = sorted([[key, resDict[key]] for key in resDict], key=lambda item: item[1])
+            del resDict
+            if len(res) > 1:
+                field.append(res[-2][0])
+                if res[-2][0].equation() not in totalResults:
+                    totalResults[res[-2][0].equation()]  = (0, res[-2][0])
+
+                totalResults[res[-2][0].equation()] = (
+                    totalResults[res[-2][0].equation()][0] + 1, totalResults[res[-2][0].equation()][1])
+
+            field.append(res[-1][0])
+            if res[-1][0].equation() not in totalResults:
+                totalResults[res[-1][0].equation()] = (0, res[-1][0])
+            totalResults[res[-1][0].equation()] = (
+            totalResults[res[-1][0].equation()][0] + 1, totalResults[res[-1][0].equation()][1])
+            del res
+
+    # всего 6 элементов, сравниваются 4. А если победит кто-то простой.
+    # Затем выбор по лигам. МОжет быть брать от 3 до 5 лидеров.
+    totalSorted = sorted([[key, totalResults[key]] for key in totalResults], key=lambda item: item[1][0])
+    return [totalSorted[-1][1][1], totalSorted[-2][1][1]]
+
 def getNewMaxAfter100():
     field = []
     sizeOfField = 10
@@ -106,8 +164,13 @@ def getNewMaxAfter100():
     totalSorted = sorted([[key, totalResults[key]] for key in totalResults], key=lambda item: item[1][0])
     return totalSorted[-1][1][1]
 
+SuperCounter = 0
+
 def throwAwayFunction(_):
-    return getNewMaxAfter100()
+    global SuperCounter
+    SuperCounter += 1
+    print(SuperCounter)
+    return modellingBySixItems()
 
 
 
@@ -117,12 +180,16 @@ def lotofTimeTries():
     maxItemsInResult = 3
     from multiprocessing import Pool
     with Pool(4) as p:
-        leaders = p.map(throwAwayFunction, range(1000))
+        leaders = p.map(throwAwayFunction, range(50))
 
-    for x in leaders:
-        leadersCnt[x.equation()] = 0
+    newLeaders = []
+    for local in leaders:
+        for x in local:
+            leadersCnt[x.equation()] = 0
+            newLeaders.append(x)
+    leaders = newLeaders
 
-    for iteration in range(100):
+    for iteration in range(50):
         sortedLeaders = sorted([[x.getValue(), x] for x in leaders], key=lambda item:item[0])
         leadersCnt[sortedLeaders[-1][1].equation()] += 1
         [x.unlockValue() for x in leaders]
