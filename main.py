@@ -172,8 +172,6 @@ def throwAwayFunction(_):
     print(SuperCounter)
     return modellingBySixItems()
 
-
-
 def lotofTimeTries():
     leaders = []
     leadersCnt = {}
