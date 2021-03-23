@@ -7,6 +7,12 @@ class DistributionParam:
         self.mu = mu
         self.sigma = sigma
 
+    def toDict(self):
+        return {
+            'mu': self.mu,
+            'sigma': self.sigma
+        }
+
 class EntityWithDistribution(IThreadEntity):
     def __init__(self,
                  formula: str,
@@ -19,6 +25,11 @@ class EntityWithDistribution(IThreadEntity):
 
     def __str__(self):
         return self.name()
+
+    def toDict(self):
+        res = super(EntityWithDistribution, self).toDict()
+        res['distribution'] = self.param.toDict()
+        return res
 
     def calcValue(self):
         return self.distribution(self.param.mu, self.param.sigma)

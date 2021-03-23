@@ -7,6 +7,11 @@ class SimpleEntity(IThreadEntity):
     def __init__(self, name, limitation):
         super(SimpleEntity, self).__init__(name, Symbol(name), limitation, False)
 
+    def toDict(self):
+        res = super(SimpleEntity, self).toDict()
+        res['e_type'] = 'simple'
+        return res
+
     def __str__(self):
         return self.name()
 

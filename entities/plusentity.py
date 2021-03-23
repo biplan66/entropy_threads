@@ -19,5 +19,12 @@ class PlusEntity(IThreadEntity):
     def __str__(self):
         return self.name()
 
+    def toDict(self):
+        res = super(PlusEntity, self).toDict()
+        res['e_type'] = 'plus'
+        res['first'] = self._first.toDict()
+        res['second'] = self._second.toDict()
+        return res
+
     def calcValue(self):
         return self._first.getValue() + self._second.getValue()

@@ -15,6 +15,13 @@ class MultiplyEntity(IThreadEntity):
         for item in second.limitation:
             self.modifyLimitations(item)
 
+    def toDict(self):
+        res = super(MultiplyEntity, self).toDict()
+        res['e_type'] = 'mult'
+        res['first'] = self._first.toDict()
+        res['second'] = self._second.toDict()
+        return res
+
     def __str__(self):
         return self.name()
 

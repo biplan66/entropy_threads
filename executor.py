@@ -3,9 +3,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import copy
+from datetime import datetime
 
 SuperCounter = 0
 IterCounter = None
+Database = None
+LeagueSizePerThread = 3
+LeagueConcatingTimes = 20
+LeagueLeaderChooseTimes = 10
+CountOfLeagues = 50
+SelectionFromLeagueSize = 3
+SelectionCountInUpperLeague = 50
+NameCollectionOfBaseThreads = ['J1', 'J2']
+ParamsId = None
+EnableFileWriting = False
 
 def expander(entity: IThreadEntity):
     res = []
@@ -21,6 +32,8 @@ def expander(entity: IThreadEntity):
     return res
 
 def writeParamsToFile(name: str, param: DistributionParam, mode = 'a', iterNumber = None):
+    if not EnableFileWriting:
+        return
     if iterNumber != None:
         f = open(f"export/distrs_{iterNumber}.txt", mode)
     else:
@@ -30,9 +43,11 @@ def writeParamsToFile(name: str, param: DistributionParam, mode = 'a', iterNumbe
 
 def modellingBySixItems(iterNumber = None):
     field = []
-    sizeOfField = 3
+    sizeOfField = LeagueSizePerThread
+    selectionCount = LeagueConcatingTimes
+    leaderSelectionCount = LeagueLeaderChooseTimes
     totalResults = {}
-    nameCollectionOfBaseThread = ['J1', 'J2']
+    nameCollectionOfBaseThread = NameCollectionOfBaseThreads
     distributions = {}
 
     mu = 0
@@ -56,7 +71,7 @@ def modellingBySixItems(iterNumber = None):
     for x in field:
         totalResults[x.equation()] = (0, x)
 
-    for iteration in range(20):
+    for iteration in range(selectionCount):
         random.shuffle(field)
         first, second, field = field[0], field[1], field[2:]
         plusEntity = PlusEntity(first, second)
@@ -71,7 +86,7 @@ def modellingBySixItems(iterNumber = None):
         [resDict.update({item: 0}) for item in trl]
 
         if len(trl) >= 2:
-            for i in range(10):
+            for i in range(leaderSelectionCount):
                 sortedItems = sorted([[item.getValue(), item] for item in trl], key=lambda item: item[0])
                 resDict[sortedItems[-1][1]] += 1
                 resDict[sortedItems[-2][1]] += 1
@@ -112,51 +127,115 @@ def lotofTimeTries(iterNumber = None):
     IterCounter = iterNumber
     leaders = []
     leadersCnt = {}
-    maxItemsInResult = 3
+    maxItemsInResult = SelectionFromLeagueSize
+    leaderSelectionCount = SelectionCountInUpperLeague
+    leaguesCount = CountOfLeagues
     from multiprocessing import Pool
     with Pool(4) as p:
-        leaders = p.map(throwAwayFunction, range(50))
+        leaders = p.map(throwAwayFunction, range(leaguesCount))
 
     newLeaders = []
     for local in leaders:
         for x in local:
-            leadersCnt[x.equation()] = 0
+            leadersCnt[x.equation()] = (0, x)
             newLeaders.append(x)
     leaders = newLeaders
 
-    for iteration in range(50):
+    for iteration in range(leaderSelectionCount):
         sortedLeaders = sorted([[x.getValue(), x] for x in leaders], key=lambda item:item[0])
-        leadersCnt[sortedLeaders[-1][1].equation()] += 1
+        curLeader = leadersCnt[sortedLeaders[-1][1].equation()]
+        leadersCnt[sortedLeaders[-1][1].equation()] = (curLeader[0]+1, curLeader[1])
         [x.unlockValue() for x in leaders]
 
-    sortedByValue = dict(sorted(leadersCnt.items(), key=lambda item: -item[1]))
+    sortedByValue = dict(sorted(leadersCnt.items(), key=lambda item: -item[1][0]))
 
+    if EnableFileWriting:
+        if iterNumber != None:
+            f = open(f"export/results_{iterNumber}.txt", "w")
+        else:
+            f = open("export/results.txt", "w")
 
-    if iterNumber != None:
-        f = open(f"export/results_{iterNumber}.txt", "w")
-    else:
-        f = open("export/results.txt", "w")
-    # f.write('Init leaders:\n')
-    # for leader in leaders:
-    #     f.write(str(leader.equation().expand()).replace("**", "^") + '\n')
-
-    f.write('Top '+ str(maxItemsInResult) +' leaders:\n')
+        f.write('Top '+ str(maxItemsInResult) +' leaders:\n')
     iter = 0
     for key in sortedByValue:
         iter += 1
         if iter > maxItemsInResult:
             break
         value = sortedByValue[key]
-        f.write(str(key.expand()).replace("**", "^") + ':' + str(value) + "\n")
+        if Database != None:
+            dbValue = value[1].toDict()
+            dbValue['wins'] = value[0]
+            dbValue['datetime'] = datetime.now()
+            dbValue['params'] = ParamsId
+            Database.results.insert_one(dbValue)
+        if EnableFileWriting:
+            f.write(str(key.expand()).replace("**", "^") + ':' + str(value[0]) + "\n")
 
-    f.close()
+    if EnableFileWriting:
+        f.close()
     print("End of leaders")
-    # exit(0)
 
 
+def initExecutor():
+    import pymongo
+    global Database
+    client = pymongo.MongoClient()
+    Database = client['threads_modelling']
 
-if __name__ == '__main__':
-    for i in range(7, 11):
+
+def modelingWithParams(leagueSizePerThread,
+                       leagueConcatingTimes,
+                       leagueLeaderChooseTimes,
+                       countOfLeagues,
+                       selectionFromLeagueSize,
+                       selectionCountInUpperLeague,
+                       nameCollectionOfBaseThreads,
+                       modellingIterationsCount
+                       ):
+    global LeagueSizePerThread, LeagueConcatingTimes, LeagueLeaderChooseTimes
+    global CountOfLeagues, SelectionFromLeagueSize, SelectionCountInUpperLeague
+    global NameCollectionOfBaseThreads, ParamsId
+    LeagueSizePerThread = leagueSizePerThread
+    LeagueConcatingTimes = leagueConcatingTimes
+    LeagueLeaderChooseTimes = leagueLeaderChooseTimes
+    CountOfLeagues = countOfLeagues
+    SelectionFromLeagueSize = selectionFromLeagueSize
+    SelectionCountInUpperLeague = selectionCountInUpperLeague
+    NameCollectionOfBaseThreads = nameCollectionOfBaseThreads
+    ParamsId = Database.params.insert_one({
+        'leagueSizePerThread': leagueSizePerThread,
+        'leagueConcatingTimes': leagueConcatingTimes,
+        'leagueLeaderChooseTimes': leagueLeaderChooseTimes,
+        'countOfLeagues': countOfLeagues,
+        'selectionFromLeagueSize': selectionFromLeagueSize,
+        'selectionCounInUpperLeague': selectionCountInUpperLeague
+    }).inserted_id
+
+    for i in range(modellingIterationsCount):
         writeParamsToFile("Init", DistributionParam(0, 0), 'w')
         lotofTimeTries(i)
+
+if __name__ == '__main__':
+    # LeagueSizePerThread = 3
+    # LeagueConcatingTimes = 20
+    # LeagueLeaderChooseTimes = 10
+    # CountOfLeagues = 50
+    # SelectionFromLeagueSize = 3
+    # SelectionCountInUpperLeague = 50
+    nameCollectionOfBaseThreads = ['J1', 'J2']
+    initExecutor()
+    for leagueSizePerThread in range(3, 4):
+        for leagueConcatingTimes in range(10, 50, 5):
+            for leagueLeaderChooseTimes in range(10, 50, 5):
+                for countOfLeagues in range(1, 1000, 25):
+                    for selectionFromLeagueSize in range(1, 5):
+                        for selectionCountInUpperLeague in range(10, 100, 10):
+                            modelingWithParams(leagueSizePerThread,
+                                               leagueConcatingTimes,
+                                               leagueLeaderChooseTimes,
+                                               countOfLeagues,
+                                               selectionFromLeagueSize,
+                                               selectionCountInUpperLeague,
+                                               nameCollectionOfBaseThreads,
+                                               50)
 

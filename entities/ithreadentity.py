@@ -8,6 +8,13 @@ class ThreadLimitation:
         self.curValue = curValue
         self.maxValue = maxValue
 
+    def toDict(self):
+        return {
+            'paramName': self.paramName,
+            'curValue': self.curValue,
+            'maxValue': self.maxValue
+        }
+
     def __str__(self):
         return self.paramName + ':' + str(self.curValue) + '/' + str(self.maxValue)
 
@@ -28,6 +35,12 @@ class IThreadEntity:
         self._lockedValue = False
         self._value = None
         self.limitation = limitation
+
+    def toDict(self):
+        return {
+            'equation': str(self._equation.expand()).replace("**", "^"),
+            'limitation': [x.toDict() for x in self.limitation]
+        }
 
     def name(self):
         return self._name
