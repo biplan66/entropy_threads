@@ -5,6 +5,7 @@ import random
 import copy
 
 SuperCounter = 0
+IterCounter = None
 
 def expander(entity: IThreadEntity):
     res = []
@@ -19,23 +20,26 @@ def expander(entity: IThreadEntity):
         return res
     return res
 
-def writeParamsToFile(name: str, param: DistributionParam, mode = 'a'):
-    f = open("export/distrs.txt", mode)
+def writeParamsToFile(name: str, param: DistributionParam, mode = 'a', iterNumber = None):
+    if iterNumber != None:
+        f = open(f"export/distrs_{iterNumber}.txt", mode)
+    else:
+        f = open(f"export/distrs.txt", mode)
     f.write(f"{name} mu: {param.mu} sigma: {param.sigma}\n")
     f.close()
 
-def modellingBySixItems():
+def modellingBySixItems(iterNumber = None):
     field = []
     sizeOfField = 3
     totalResults = {}
     nameCollectionOfBaseThread = ['J1', 'J2']
     distributions = {}
 
-    mu = np.random.uniform(0, 3)
+    mu = 0
     sigma = np.random.uniform(0, 5)
     for name in nameCollectionOfBaseThread:
         distributions[name] = DistributionParam(mu, sigma)
-        writeParamsToFile(name, distributions[name])
+        writeParamsToFile(name, distributions[name], iterNumber=iterNumber)
 
     for i in range(sizeOfField):
         for name in nameCollectionOfBaseThread:
@@ -98,12 +102,14 @@ def modellingBySixItems():
     return [totalSorted[-1][1][1], totalSorted[-2][1][1]]
 
 def throwAwayFunction(_):
-    global SuperCounter
+    global SuperCounter, IterCounter
     SuperCounter += 1
     print(SuperCounter)
-    return modellingBySixItems()
+    return modellingBySixItems(IterCounter)
 
-def lotofTimeTries():
+def lotofTimeTries(iterNumber = None):
+    global IterCounter
+    IterCounter = iterNumber
     leaders = []
     leadersCnt = {}
     maxItemsInResult = 3
@@ -126,7 +132,10 @@ def lotofTimeTries():
     sortedByValue = dict(sorted(leadersCnt.items(), key=lambda item: -item[1]))
 
 
-    f = open("export/results.txt", "w")
+    if iterNumber != None:
+        f = open(f"export/results_{iterNumber}.txt", "w")
+    else:
+        f = open("export/results.txt", "w")
     # f.write('Init leaders:\n')
     # for leader in leaders:
     #     f.write(str(leader.equation().expand()).replace("**", "^") + '\n')
@@ -142,11 +151,12 @@ def lotofTimeTries():
 
     f.close()
     print("End of leaders")
-    exit(0)
+    # exit(0)
 
 
 
 if __name__ == '__main__':
-    writeParamsToFile("Init", DistributionParam(0, 0), 'w')
-    lotofTimeTries()
+    for i in range(7, 11):
+        writeParamsToFile("Init", DistributionParam(0, 0), 'w')
+        lotofTimeTries(i)
 
