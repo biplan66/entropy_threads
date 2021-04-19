@@ -225,11 +225,11 @@ if __name__ == '__main__':
     nameCollectionOfBaseThreads = ['J1', 'J2']
     initExecutor()
     for leagueSizePerThread in range(4, 5):
-        for leagueConcatingTimes in range(15, 50, 5):
-            for leagueLeaderChooseTimes in range(10, 50, 5):
-                for countOfLeagues in range(1, 100, 25):
+        for leagueConcatingTimes in range(30, 51, 5):
+            for leagueLeaderChooseTimes in range(10, 51, 10):
+                for countOfLeagues in range(10, 101, 25):
                     for selectionFromLeagueSize in range(1, 5):
-                        for selectionCountInUpperLeague in range(10, 11, 1):
+                        for selectionCountInUpperLeague in range(10, 101, 10):
                             modelingWithParams(leagueSizePerThread,
                                                leagueConcatingTimes,
                                                leagueLeaderChooseTimes,
