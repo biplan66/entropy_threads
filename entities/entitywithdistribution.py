@@ -31,8 +31,16 @@ class EntityWithDistribution(IThreadEntity):
         res['distribution'] = self.param.toDict()
         return res
 
+    def reinitRandom(self):
+        raise NotImplemented
+
     def calcValue(self):
-        return self.distribution(self.param.mu, self.param.sigma)
+        import math
+        self.reinitRandom()
+        return (self.distribution(self.param.mu, self.param.sigma))
+
+    def __str__(self):
+        return self.name()
 
     def exportImage(self, prefixPath = None):
         import numpy as np
@@ -56,8 +64,22 @@ class EntityWithNumpyDistribution(EntityWithDistribution):
     def __init__(self, formula: str, limitation: list, distributionParams: DistributionParam):
         super().__init__(formula, limitation, np.random.normal, distributionParams)
 
+    def __str__(self):
+        return super().__str__()
+
+    def reinitRandom(self):
+        # import os
+        # np.random.seed(os.urandom(1))
+        ...
 
 class EntityWithOriginalRandomDistribution(EntityWithDistribution):
     def __init__(self, formula: str, limitation: list, distributionParams: DistributionParam):
-        import random
-        super().__init__(formula, limitation, random.gauss, distributionParams)
+        import random, os
+        self.myRandom = random.Random()#os.urandom(1))
+        super().__init__(formula, limitation, self.myRandom.gauss, distributionParams)
+
+    def __str__(self):
+        return super().__str__()
+
+    def reinitRandom(self):
+        pass

@@ -3,10 +3,11 @@ import numpy as np
 import copy
 
 class ThreadLimitation:
-    def __init__(self, paramName: str, curValue: int, maxValue: int):
+    def __init__(self, paramName: str, curValue: int, maxValue: int, maxTerms: int = None):
         self.paramName = paramName
         self.curValue = curValue
         self.maxValue = maxValue
+        self.maxTerms = maxTerms
 
     def toDict(self):
         return {
@@ -20,6 +21,15 @@ class ThreadLimitation:
 
     def isNormalCount(self):
         return self.curValue <= self.maxValue
+
+    def getMaxTerms(self):
+        return self.maxTerms
+
+    def setMaxTerms(self, newTerm: int):
+        self.maxTerms = newTerm
+
+    def getCurValue(self):
+        return self.curValue
 
     def modifyCurValue(self, addToCurValue: int):
         self.curValue += addToCurValue
@@ -56,6 +66,16 @@ class IThreadEntity:
         if not modified:
             self.limitation.append(copy.copy(newLimit))
 
+    def setMaxLimitation(self, name:str, newMax:int):
+        for myLimit in self.limitation:
+            if myLimit.paramName != name:
+                continue
+            myLimit.maxValue = newMax
+
+    def setMaxTerms(self, newMaxTerms: int):
+        for myLimit in self.limitation:
+            myLimit.setMaxTerms(newMaxTerms)
+
 
     def equation(self):
         return self._equation
@@ -90,9 +110,15 @@ class IThreadEntity:
 
     def isNormalCount(self):
         auto = all([item.isNormalCount() for item in self.limitation])
+        maxTerms = [item.getMaxTerms() for item in self.limitation if item.getMaxTerms() != None]
+        if len(maxTerms) > 0:
+            maxTerms = min(maxTerms)
+        else:
+            maxTerms = None
+        totalTerms = sum([item.getCurValue() for item in self.limitation])
         if not auto:
             a=10
-        return auto
+        return auto and (maxTerms != None and totalTerms <= maxTerms or maxTerms == None)
         # paramNames = [key[:-len('_cur')] for key in self.limitation if key.endswith('_cur')]
         # for name in paramNames:
         #     if self.limitation[name + '_cur'] > self.limitation[name + '_max']:
