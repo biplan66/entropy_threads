@@ -148,7 +148,7 @@ def SelectionByPlus(field: list, selectionCount: int, leaderSelectionCount: int)
     totalSorted = sorted([[key, totalResults[key]] for key in totalResults], key=lambda item: item[1][0])
     return [totalSorted[-1][1][1], totalSorted[-2][1][1]]
 
-def SelectBestEquations(field: list, leaderSelectionCount: int):
+def SelectBestEquations(field: list, leaderSelectionCount: int, groupByEquation = True):
     resDict = {}
     trl = [item for item in field if item.isNormalCount()]
     [resDict.update({item: 0}) for item in trl]
@@ -164,7 +164,27 @@ def SelectBestEquations(field: list, leaderSelectionCount: int):
             del resDict[key]
     res = sorted([[key, resDict[key]] for key in resDict], key=lambda item: item[1])
     del resDict
+    if groupByEquation:
+        return GroupByEquation(res)
     return res
+
+def GroupByEquation(field: list):
+    count = len(field)
+    scipped = []
+    newField = []
+    for i in range(count):
+        if i in scipped:
+            continue
+        originalEntity, originalValue = field[i]
+        equation = originalEntity.equation()
+        for k in range(i + 1, count):
+            entity, value = field[k]
+            if entity.equation()  == equation:
+                originalValue = originalValue + value
+                scipped.append(k)
+        newField.append((originalEntity, originalValue))
+    newField = sorted(newField, key=lambda item: item[1])
+    return newField
 
 def convertFromArrayOfArray(fieldOfFields:list):
     res = []
@@ -210,13 +230,13 @@ def modelling(sizeOfField, threadLimitation:int, nameCollectionOfBaseThread = ['
             field.append(value)
 
     iterationCount = 20
-    # field = parallelRunner(field, SelectionMultiplyThrowAway, iterationCount)
-    # for fieldItem in field:
-    #     for name in nameCollectionOfBaseThread:
-    #         fieldItem.setMaxLimitation(name, 3)
-    #         fieldItem.setMaxTerms(None)
-    #
-    # field = parallelRunner(field, SelectionPlusThrowAway, int(50))#iterationCount/2 + 1))
+    field = parallelRunner(field, SelectionMultiplyThrowAway, iterationCount)
+    for fieldItem in field:
+        for name in nameCollectionOfBaseThread:
+            fieldItem.setMaxLimitation(name, 3)
+            fieldItem.setMaxTerms(None)
+
+    field = parallelRunner(field, SelectionPlusThrowAway, int(50))#iterationCount/2 + 1))
 
     t = SelectBestEquations(field, 100)
     t = sorted(t, key=lambda item: item[1])
