@@ -27,6 +27,26 @@ def SelectionMultiplyThrowAway(field):
 def SelectionPlusThrowAway(field):
     return SelectionByPlus(copy.deepcopy(field), PLUS_SELECTION_COUNT, PLUS_LEADER_SELECTION)
 
+def updateTotalResults(input: dict, value: IThreadEntity):
+    return dict(_updateTotalResults(input, value))
+
+def _updateTotalResults(input: dict, value: IThreadEntity):
+    # newDict = {}
+    updated = False
+    for key in input:
+        count, equation = input[key]
+        if key.equals(value.equation()):
+            count += 1
+            updated = True
+        # newDict.update({key: (count, equation)})
+        yield key, (count, equation)
+
+    if not updated:
+        # newDict.update({value.equation(): (1, value)})
+        yield value.equation(), (1, value)
+
+    # return newDict
+
 def SelectionByMultiply(field: list, selectionCount: int, leaderSelectionCount: int):
     totalResults = {}
 
@@ -62,29 +82,23 @@ def SelectionByMultiply(field: list, selectionCount: int, leaderSelectionCount: 
         [resDict.update({item: 0}) for item in trl]
 
         if len(trl) >= 2:
-            for i in range(leaderSelectionCount):
-                sortedItems = sorted([[item.getValue(), item] for item in trl], key=lambda item: item[0])
-                resDict[sortedItems[-1][1]] += 1
-                resDict[sortedItems[-2][1]] += 1
-                [item.unlockValue() for item in trl]
-            for key in resDict:
-                if key.isNotNullable({'J1': 0, 'J2': 0}):
-                    del resDict[key]
-            res = sorted([[key, resDict[key]] for key in resDict], key=lambda item: item[1])
+            # for i in range(leaderSelectionCount):
+            #     sortedItems = sorted([[item.getValue(), item] for item in trl], key=lambda item: item[0])
+            #     resDict[sortedItems[-1][1]] += 1
+            #     resDict[sortedItems[-2][1]] += 1
+            #     [item.unlockValue() for item in trl]
+            # for key in resDict:
+            #     if key.isNotNullable({'J1': 0, 'J2': 0}):
+            #         del resDict[key]
+            # res = sorted([[key, resDict[key]] for key in resDict], key=lambda item: item[1])
+            res = SelectBestEquations(trl, leaderSelectionCount)
             del resDict
             if len(res) > 1:
                 field.append(res[-2][0])
-                if res[-2][0].equation() not in totalResults:
-                    totalResults[res[-2][0].equation()]  = (0, res[-2][0])
-
-                totalResults[res[-2][0].equation()] = (
-                    totalResults[res[-2][0].equation()][0] + 1, totalResults[res[-2][0].equation()][1])
+                totalResults = updateTotalResults(totalResults, res[-2][0])
 
             field.append(res[-1][0])
-            if res[-1][0].equation() not in totalResults:
-                totalResults[res[-1][0].equation()] = (0, res[-1][0])
-            totalResults[res[-1][0].equation()] = (
-            totalResults[res[-1][0].equation()][0] + 1, totalResults[res[-1][0].equation()][1])
+            totalResults = updateTotalResults(totalResults, res[-1][0])
             del res
     totalSorted = sorted([[key, totalResults[key]] for key in totalResults], key=lambda item: item[1][0])
 
@@ -120,16 +134,17 @@ def SelectionByPlus(field: list, selectionCount: int, leaderSelectionCount: int)
         [resDict.update({item: 0}) for item in trl]
 
         if len(trl) >= 2:
-            for i in range(leaderSelectionCount):
-                sortedItems = sorted([[item.getValue(), item] for item in trl], key=lambda item: item[0])
-                resDict[sortedItems[-1][1]] += 1
-                resDict[sortedItems[-2][1]] += 1
-                [item.unlockValue() for item in trl]
-            for key in resDict:
-                if key.isNotNullable({'J1': 0, 'J2': 0}):
-                    del resDict[key]
-            res = sorted([[key, resDict[key]] for key in resDict], key=lambda item: item[1])
-            del resDict
+            # for i in range(leaderSelectionCount):
+            #     sortedItems = sorted([[item.getValue(), item] for item in trl], key=lambda item: item[0])
+            #     resDict[sortedItems[-1][1]] += 1
+            #     resDict[sortedItems[-2][1]] += 1
+            #     [item.unlockValue() for item in trl]
+            # for key in resDict:
+            #     if key.isNotNullable({'J1': 0, 'J2': 0}):
+            #         del resDict[key]
+            # res = sorted([[key, resDict[key]] for key in resDict], key=lambda item: item[1])
+            # del resDict
+            res = SelectBestEquations(trl, leaderSelectionCount)
             if len(res) > 1:
                 field.append(res[-2][0])
                 if res[-2][0].equation() not in totalResults:
@@ -179,7 +194,7 @@ def GroupByEquation(field: list):
         equation = originalEntity.equation()
         for k in range(i + 1, count):
             entity, value = field[k]
-            if entity.equation()  == equation:
+            if entity.equation().equals(equation):
                 originalValue = originalValue + value
                 scipped.append(k)
         newField.append((originalEntity, originalValue))
@@ -229,7 +244,7 @@ def modelling(sizeOfField, threadLimitation:int, nameCollectionOfBaseThread = ['
                 continue
             field.append(value)
 
-    iterationCount = 20
+    iterationCount = 5
     field = parallelRunner(field, SelectionMultiplyThrowAway, iterationCount)
     for fieldItem in field:
         for name in nameCollectionOfBaseThread:
@@ -245,4 +260,5 @@ def modelling(sizeOfField, threadLimitation:int, nameCollectionOfBaseThread = ['
 
 
 if __name__ == '__main__':
-    modelling(4, 3)
+    # modelling(4, 3)
+    modelling(4, 1)
